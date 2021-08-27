@@ -16,29 +16,31 @@ func main() {
 
 	program := initOpenGL()
 
-	// vao := makeVao(square)
-	cells := makeCells()
+	board := makeBoard()
 
+	go UpdateLoop(window, board)
+	DrawLoop(window, board, program)
+
+}
+
+func UpdateLoop(window *glfw.Window, board *board) {
 	for !window.ShouldClose() {
 		t := time.Now()
 
-		for x, cx := range cells {
-			for y, c := range cx {
-				c.checkState(cells, x, y)
-			}
-		}
+		board.tick()
 
-		// for x := range cells {
-		// 	for _, c := range cells[x] {
-		// 		c.checkState(cells)
-		// 	}
-		// }
-
-		draw(cells, window, program)
-
-		time.Sleep(time.Second/time.Duration(fps) - time.Since(t))
+		time.Sleep(time.Nanosecond*time.Duration(board.UpdateInterval) - time.Since(t))
 	}
+}
 
+func DrawLoop(window *glfw.Window, board *board, program uint32) {
+	for !window.ShouldClose() {
+		t := time.Now()
+
+		draw(board, window, program)
+
+		time.Sleep(time.Nanosecond/time.Duration(board.FrameInterval) - time.Since(t))
+	}
 }
 
 // initGlfw initializes glfw and returns a Window to use.
@@ -62,15 +64,11 @@ func initGlfw() *glfw.Window {
 	return window
 }
 
-func draw(cells [][]*cell, window *glfw.Window, program uint32) {
+func draw(board *board, window *glfw.Window, program uint32) {
 	gl.Clear(gl.COLOR_BUFFER_BIT | gl.DEPTH_BUFFER_BIT)
 	gl.UseProgram(program)
 
-	for x := range cells {
-		for _, c := range cells[x] {
-			c.draw()
-		}
-	}
+	board.draw()
 
 	glfw.PollEvents()
 	window.SwapBuffers()
