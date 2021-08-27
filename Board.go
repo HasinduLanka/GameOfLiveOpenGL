@@ -1,6 +1,6 @@
 package main
 
-import "github.com/go-gl/gl/v4.1-core/gl"
+import "github.com/go-gl/gl/v4.4-core/gl"
 
 type board struct {
 	FrameInterval  int64

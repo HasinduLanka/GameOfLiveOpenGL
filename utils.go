@@ -5,7 +5,7 @@ import (
 	"log"
 	"strings"
 
-	"github.com/go-gl/gl/v4.1-core/gl"
+	"github.com/go-gl/gl/v4.4-core/gl"
 )
 
 func compileShader(source string, shaderType uint32) (uint32, error) {
