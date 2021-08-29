@@ -10,22 +10,28 @@ type cell struct {
 }
 
 func makeBoard() *board {
-	rand.Seed(time.Now().UnixNano())
-	intcolumns := int(columns)
-	introws := int(rows)
 
-	FrameBufferSize := int(UpdatesPerSecond/FramesPerSecond) + 4
+	if RandomSeed == 0 {
+		rand.Seed(time.Now().UnixNano())
+	} else {
+		rand.Seed(RandomSeed)
+	}
+
+	intcolumns := int(BoardColumns)
+	introws := int(BoardRows)
+
+	FrameBufferSize := 14
 
 	cells := make([][]*cell, introws)
 	B := board{
 		Rows:           introws,
 		Columns:        intcolumns,
 		Cells:          cells,
-		Current:        &Frame{Alive: make([][]bool, introws)},
+		Current:        &Frame{},
 		UpdateInterval: int64(time.Second / time.Duration(UpdatesPerSecond)),
 		FrameInterval:  int64(time.Second / time.Duration(FramesPerSecond)),
-		DrawableFrames: make(chan *Frame, FrameBufferSize),
-		DirtyFrames:    make(chan *Frame, FrameBufferSize),
+		DrawableFrames: make(chan *Frame, FrameBufferSize+2),
+		DirtyFrames:    make(chan *Frame, FrameBufferSize+2),
 	}
 
 	for i := 0; i < FrameBufferSize; i++ {
@@ -39,13 +45,9 @@ func makeBoard() *board {
 	for x := 0; x < introws; x++ {
 
 		cells[x] = make([]*cell, intcolumns)
-		B.Current.Alive[x] = make([]bool, intcolumns)
 
 		for y := 0; y < intcolumns; y++ {
 			c := newCell(x, y)
-
-			alive := rand.Float64() < threshold
-			B.Current.Alive[x][y] = alive
 
 			cells[x][y] = c
 		}
@@ -60,6 +62,31 @@ func makeBoard() *board {
 
 	}
 
+	if LoadBoard != nil {
+		B.Current.Alive = LoadBoard().Alive
+
+	} else if CreateEmpty {
+		B.Current.Alive = make([][]bool, introws)
+
+		for x := 0; x < introws; x++ {
+			B.Current.Alive[x] = make([]bool, intcolumns)
+		}
+
+	} else {
+		B.Current.Alive = make([][]bool, introws)
+
+		for x := 0; x < introws; x++ {
+			B.Current.Alive[x] = make([]bool, intcolumns)
+
+			for y := 0; y < intcolumns; y++ {
+
+				alive := rand.Float64() < RandomThreshold
+				B.Current.Alive[x][y] = alive
+			}
+		}
+	}
+
+	B.DrawableFrames <- B.Current
 	return &B
 }
 
@@ -67,8 +94,8 @@ func newCell(x, y int) *cell {
 	points := make([]float32, len(square))
 	copy(points, square)
 
-	sizex := 2.0 / rows
-	sizey := 2.0 / columns
+	sizex := 2.0 / BoardRows
+	sizey := 2.0 / BoardColumns
 	positionx := (float32(x) * sizex) - 1
 	positiony := (float32(y) * sizey) - 1
 
