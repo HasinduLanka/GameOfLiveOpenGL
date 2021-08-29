@@ -7,7 +7,7 @@ var (
 	FramesPerSecond  int = 20
 	UpdatesPerSecond int = 20
 
-	InitDelay int = 500
+	InitDelay int = 100
 
 	// Board Creation
 
